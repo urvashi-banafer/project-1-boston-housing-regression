@@ -7,6 +7,7 @@ app = Flask(__name__)
 
 #Load the model 
 regmodel =pickle.load(open('regmodel.pkl','rb'))
+scaler = pickle.load(open('scaling.pkl', 'rb'))
 
 @app.route('/')
 def home():
@@ -15,12 +16,27 @@ def home():
 @app.route('/predict_api', methods=['POST']) 
 
 def predict_api():
-    data=req.json['data'] ##to make sure mt data come in json format
-    print(data)
-    print(np.array(list(data.values()))).reshape(1,-1)
-    new_data = scaler.transform(np.array(list(data.values()))).reshape(1,-1)
-    output =regmodel.predict(new_data)
-    print(output[0])
+    data=request.json['data'] ##to make sure mt data come in json format
+    print("Input JSON:",data)
+    input_data = np.array(list(data.values())).reshape(1,-1)
+    print("Input Data Array:", input_data)
 
-    if ___name___=="___main___":
-        app.run(debug=True)
+
+    new_data = scaler.transform(input_data)
+    print("Scaled Data:", new_data)
+    output = regmodel.predict(new_data)
+    print("Prediction:",output[0])                                              
+    return jsonify({'prediction': float(output[0])})
+
+@app.route('/predict' , methods=['POST'])
+def predict():
+    data=[float(x) for x in request.form.values()]
+    final_input = scaler.transform(np.array(data).reshape(1,-1))
+    print(final_input)
+    output = regmodel.predict(final_input)
+    return render_template("home.html", prediction_text="The predicted value is ()".format(output))
+
+if __name__ == "__main__" :
+    app.run(debug=True)
+
+
